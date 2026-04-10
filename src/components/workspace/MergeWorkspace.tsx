@@ -1,44 +1,55 @@
 import { Loader2, GitMerge } from 'lucide-react';
-import { usePDFStore } from '../store/usePDFStore';
-import { mergePDFs } from '../tools/pdfMerge';
+import { usePDFStore } from '../../store/usePDFStore';
+import { TOOL_REGISTRY } from '../../tools/registry';
 
-export function MergeAction() {
+export function MergeWorkspace() {
   const files = usePDFStore(state => state.files);
   const status = usePDFStore(state => state.status);
-  const errorMessage = usePDFStore(state => state.errorMessage);
   
   const setStatus = usePDFStore(state => state.setStatus);
   const setErrorMessage = usePDFStore(state => state.setErrorMessage);
-  const setOutputBlob = usePDFStore(state => state.setOutputBlob);
+  const setOutputs = usePDFStore(state => state.setOutputs);
 
-  const handleMerge = async () => {
-    if (files.length < 2) return;
+  const toolDef = TOOL_REGISTRY.find(t => t.id === 'pdf-merge');
+
+  // Filter valid files
+  const validFiles = files.filter(f => Object.keys(toolDef!.accept).includes(f.file.type));
+
+  const handleExecute = async () => {
+    if (validFiles.length < 2) return;
     
     setStatus('running');
     setErrorMessage(null);
-    setOutputBlob(null);
+    setOutputs(null, null);
 
     try {
-      const fileObjects = files.map(f => f.file);
-      const mergedPdfBytes = await mergePDFs(fileObjects);
+      const fileObjects = validFiles.map(f => f.file);
+      const mergedPdfBytes = await toolDef!.execute(fileObjects, {}) as Uint8Array;
       
       const blob = new Blob([mergedPdfBytes as any], { type: 'application/pdf' });
-      setOutputBlob(blob);
+      const filename = `merged-${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      setOutputs([blob], [filename]);
       setStatus('done');
     } catch (error: any) {
-      console.error("Merge failed:", error);
-      setErrorMessage(error.message || "An unknown error occurred while merging.");
+      console.error("Execute failed:", error);
+      setErrorMessage(error.message || "An unknown error occurred.");
       setStatus('error');
     }
   };
 
-  const isReady = files.length >= 2;
+  const isReady = validFiles.length >= 2;
   const isRunning = status === 'running';
 
   return (
-    <div className="mt-auto">
+    <div>
+      {status === 'idle' && validFiles.length > 0 && validFiles.length < 2 && (
+        <p className="text-center text-sm text-gray-500 mb-3">
+          Add at least 2 PDF files to merge
+        </p>
+      )}
       <button
-        onClick={handleMerge}
+        onClick={handleExecute}
         disabled={!isReady || isRunning}
         className={`w-full py-4 rounded-xl flex items-center justify-center font-semibold text-lg transition-all duration-200 shadow-sm
           ${(!isReady || isRunning) 
@@ -53,23 +64,10 @@ export function MergeAction() {
         ) : (
           <>
             <GitMerge className="mr-2" size={24} />
-            Merge {files.length} PDFs
+            Merge {validFiles.length} PDFs
           </>
         )}
       </button>
-
-      {status === 'error' && errorMessage && (
-        <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm">
-          <p className="font-medium mb-1">Merge failed:</p>
-          <p>{errorMessage}</p>
-        </div>
-      )}
-      
-      {status === 'idle' && files.length > 0 && files.length < 2 && (
-        <p className="text-center text-sm text-gray-500 mt-3">
-          Add at least 2 files to merge
-        </p>
-      )}
     </div>
   );
 }

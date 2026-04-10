@@ -1,18 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { usePDFStore } from '../store/usePDFStore';
+import { usePDFStore } from '../../store/usePDFStore';
 
 // Configure the worker using the CDN as requested
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+}
 
 export function PreviewPanel() {
-  const outputBlob = usePDFStore(state => state.outputBlob);
+  const outputBlobs = usePDFStore(state => state.outputBlobs);
   const status = usePDFStore(state => state.status);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // We only preview the very first output blob
+  const previewBlob = outputBlobs?.[0];
+
   useEffect(() => {
-    if (!outputBlob || status !== 'done' || !canvasRef.current) return;
+    if (!previewBlob || status !== 'done' || !canvasRef.current) return;
 
     let renderTask: pdfjsLib.RenderTask | null = null;
     let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
@@ -20,7 +25,7 @@ export function PreviewPanel() {
     const renderPage = async () => {
       try {
         setError(null);
-        const arrayBuffer = await outputBlob.arrayBuffer();
+        const arrayBuffer = await previewBlob.arrayBuffer();
         
         loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
@@ -63,12 +68,12 @@ export function PreviewPanel() {
         loadingTask.destroy();
       }
     };
-  }, [outputBlob, status]);
+  }, [previewBlob, status]);
 
-  if (status !== 'done' || !outputBlob) {
+  if (status !== 'done' || !previewBlob) {
     return (
       <div className="flex-grow flex items-center justify-center p-6 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 mb-4 h-64">
-        <p className="text-gray-400">Preview will appear here after merging</p>
+        <p className="text-gray-400">Preview will appear here after processing</p>
       </div>
     );
   }
