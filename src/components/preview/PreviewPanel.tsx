@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+// @ts-ignore
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { usePDFStore } from '../../store/usePDFStore';
 
-// Configure the worker using the CDN as requested
+// Configure the worker using the native bundled build
 if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 }
 
 export function PreviewPanel() {

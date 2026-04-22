@@ -1,7 +1,7 @@
 import { X, FileText, Trash2, GripVertical } from 'lucide-react';
-import { usePDFStore } from '../../store/usePDFStore';
+import { usePDFStore, type PDFFileItem } from '../../store/usePDFStore';
 import { formatBytes } from '../../utils/formatBytes';
-import { TOOL_REGISTRY } from '../../tools/registry';
+
 
 import {
   DndContext,
@@ -22,7 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 interface SortableFileItemProps {
   id: string; 
-  fileItem: any; 
+  fileItem: PDFFileItem; 
   index: number;
   isAccepted: boolean;
   onRemove: (id: string) => void;
@@ -96,13 +96,7 @@ export function FileList() {
   const removeFile = usePDFStore(state => state.removeFile);
   const reorderFiles = usePDFStore(state => state.reorderFiles);
   const clearFiles = usePDFStore(state => state.clearFiles);
-  const activeToolId = usePDFStore(state => state.activeTool);
-  const status = usePDFStore(state => state.status);
-
-  const activeToolDef = TOOL_REGISTRY.find(t => t.id === activeToolId);
-  const acceptedTypes = activeToolDef?.accept || {};
-
-  const isAccepted = (fileType: string) => Object.keys(acceptedTypes).includes(fileType);
+  const isAccepted = (_type?: string) => true;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

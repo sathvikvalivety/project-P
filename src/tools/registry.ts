@@ -4,6 +4,7 @@ import { compressPDF } from './pdfCompress';
 import { imagesToPDF } from './imagesToPDF';
 
 export type ToolCategory = 'PDF Tools' | 'Image Tools';
+export type ToolOutputType = 'single-pdf' | 'multi-pdf' | 'image' | 'text';
 
 export interface ToolDefinition {
   id: string;
@@ -11,6 +12,9 @@ export interface ToolDefinition {
   description: string;
   category: ToolCategory;
   accept: Record<string, string[]>;
+  outputType: ToolOutputType;
+  acceptsInput: ToolOutputType[];
+  defaultOptions: Record<string, unknown>;
   execute: (input: File[], options: Record<string, unknown>) => Promise<Uint8Array | Uint8Array[]>;
 }
 
@@ -21,6 +25,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     description: 'Combine multiple PDFs into a single file',
     category: 'PDF Tools',
     accept: { 'application/pdf': ['.pdf'] },
+    outputType: 'single-pdf',
+    acceptsInput: ['single-pdf', 'multi-pdf'],
+    defaultOptions: {},
     execute: async (files, _options) => {
       return await mergePDFs(files);
     }
@@ -31,6 +38,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     description: 'Extract specific pages into separate files',
     category: 'PDF Tools',
     accept: { 'application/pdf': ['.pdf'] },
+    outputType: 'multi-pdf',
+    acceptsInput: ['single-pdf'],
+    defaultOptions: { ranges: "1" },
     execute: async (files, options) => {
       const ranges = options.ranges as string;
       return await splitPDF(files[0], ranges);
@@ -42,6 +52,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     description: 'Reduce file size and remove metadata',
     category: 'PDF Tools',
     accept: { 'application/pdf': ['.pdf'] },
+    outputType: 'single-pdf',
+    acceptsInput: ['single-pdf'],
+    defaultOptions: { deepMode: false, quality: 60 },
     execute: async (files, options) => {
       const deepMode = options.deepMode as boolean;
       return await compressPDF(files[0], deepMode);
@@ -57,6 +70,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
       'image/jpeg': ['.jpeg', '.jpg'],
       'image/webp': ['.webp']
     },
+    outputType: 'single-pdf',
+    acceptsInput: ['image'],
+    defaultOptions: {},
     execute: async (files, _options) => {
       return await imagesToPDF(files);
     }

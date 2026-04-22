@@ -1,9 +1,11 @@
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
+// @ts-ignore
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 // Ensure worker is configured natively for compression rendering
 if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 }
 
 export async function compressPDF(file: File, deepMode: boolean): Promise<Uint8Array> {
@@ -43,7 +45,7 @@ export async function compressPDF(file: File, deepMode: boolean): Promise<Uint8A
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error("Could not acquire canvas context");
 
-        await page.render({ canvasContext: ctx, viewport: viewport } as any).promise;
+        await (page.render({ canvasContext: ctx, viewport: viewport } as any)).promise;
 
         // Compress as low quality JPEG
         const imgData = canvas.toDataURL('image/jpeg', 0.6);

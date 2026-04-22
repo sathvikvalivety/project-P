@@ -2,15 +2,12 @@ import { useCallback } from 'react';
 import { useDropzone, type FileRejection } from 'react-dropzone';
 import { UploadCloud } from 'lucide-react';
 import { usePDFStore } from '../../store/usePDFStore';
-import { TOOL_REGISTRY } from '../../tools/registry';
+
 
 export function DropZone() {
   const addFiles = usePDFStore(state => state.addFiles);
   const setErrorMessage = usePDFStore(state => state.setErrorMessage);
-  const activeToolId = usePDFStore(state => state.activeTool);
-
-  const activeToolDef = TOOL_REGISTRY.find(t => t.id === activeToolId);
-  const acceptedTypes = activeToolDef?.accept || {};
+  const acceptedTypes = undefined;
 
   const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
     if (fileRejections.length > 0) {
