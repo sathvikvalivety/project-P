@@ -55,7 +55,7 @@ export function ToolWorkspace() {
   const activeStep = recipe.steps.find(s => s.id === activeStepId);
 
   return (
-    <div className="flex flex-col flex-grow min-h-0 space-y-6">
+    <div className="flex flex-col flex-grow min-h-0 space-y-4 relative z-0">
       {/* Share Banner */}
       {showShareBanner && (
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-3xl flex items-center justify-between shadow-xl shadow-blue-100 animate-in slide-in-from-top-6 duration-500">
@@ -78,82 +78,110 @@ export function ToolWorkspace() {
         </div>
       )}
 
-      <RecipeToolbar />
-
-      <div className="flex-grow flex flex-col min-h-0 space-y-4 overflow-hidden pb-4 pr-1">
-        <div className="flex-shrink-0">
-          <DropZone />
-        </div>
-        {hasFiles && <FileList />}
-
-        <div className="space-y-2 flex-shrink-0">
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Workflow Pipeline</h3>
-              {isRunning && <Loader2 size={12} className="animate-spin text-blue-500" />}
-            </div>
-            <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-tighter">
-              {recipe.steps.length} {recipe.steps.length === 1 ? 'Step' : 'Steps'}
-            </span>
+      {/* Main Split Layout */}
+      <div className="flex-grow flex flex-col lg:flex-row min-h-0 gap-6">
+        
+        {/* Left Pane: Files Management */}
+        <div className="flex flex-col w-full lg:w-[45%] xl:w-[40%] min-h-0 space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
+          <div className="flex-shrink-0 drop-shadow-sm hover:drop-shadow-md transition-all duration-300">
+            <DropZone />
           </div>
-
-          {hasSteps ? (
-            <div className="space-y-2">
-              <RecipeStrip
-                activeStepId={activeStepId}
-                onSetActiveStep={setActiveStepId}
-              />
-              {activeStep && <StepOptionsPanel step={activeStep} />}
+          {hasFiles && (
+            <div className="flex-grow flex flex-col min-h-0 drop-shadow-sm hover:drop-shadow-md transition-all duration-300">
+              <FileList />
             </div>
-          ) : (
-            <EmptyState hasFiles={hasFiles} />
           )}
         </div>
 
-        {/* Global Run Button */}
-        {hasSteps && (
-          <div className="pt-4 sticky bottom-0 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pb-4">
-            <button
-              onClick={handleRun}
-              disabled={!hasFiles || isRunning}
-              className={`w-full py-5 rounded-3xl flex items-center justify-center font-black text-xl transition-all duration-300 group
-                ${(!hasFiles || isRunning)
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xl shadow-blue-200/50 hover:shadow-blue-300/60 active:scale-[0.98]'}`}
-            >
-              {isRunning ? (
-                <>
-                  <Loader2 className="animate-spin mr-3" size={24} strokeWidth={3} />
-                  Executing Chain...
-                </>
-              ) : (
-                <>
-                  <Play className={`mr-3 transition-transform duration-300 ${hasFiles ? 'group-hover:translate-x-1' : ''}`} size={24} fill="currentColor" strokeWidth={3} />
-                  Run Recipe Workflow
-                </>
-              )}
-            </button>
-            {!hasFiles && (
-              <p className="text-center text-[10px] font-black text-amber-500 mt-4 uppercase tracking-widest bg-amber-50 py-2 rounded-xl border border-amber-100">
-                Drop files at the top to process this recipe
-              </p>
+        {/* Right Pane: Workflow Pipeline */}
+        <div className="flex flex-col w-full lg:w-[55%] xl:w-[60%] min-h-0 bg-white/70 backdrop-blur-2xl border border-white/80 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden flex-grow animate-in fade-in slide-in-from-right-4 duration-500 hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] transition-shadow">
+          
+          <div className="p-4 border-b border-white/60 bg-white/50 backdrop-blur-md">
+            <RecipeToolbar />
+          </div>
+
+          <div className="flex-grow flex flex-col min-h-0 overflow-y-auto custom-scrollbar p-6 space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest drop-shadow-sm">Workflow Pipeline</h3>
+                {isRunning && <Loader2 size={12} className="animate-spin text-blue-500" />}
+              </div>
+              <span className="text-[10px] font-black text-gray-500 bg-white shadow-sm border border-gray-100 px-3 py-1 rounded-full uppercase tracking-widest">
+                {recipe.steps.length} {recipe.steps.length === 1 ? 'Step' : 'Steps'}
+              </span>
+            </div>
+
+            {hasSteps ? (
+              <div className="space-y-4 flex-grow flex flex-col">
+                <div className="flex-shrink-0 drop-shadow-sm">
+                  <RecipeStrip
+                    activeStepId={activeStepId}
+                    onSetActiveStep={setActiveStepId}
+                  />
+                </div>
+                {activeStep && (
+                  <div className="flex-grow">
+                    <StepOptionsPanel step={activeStep} />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex-grow flex flex-col justify-center">
+                <EmptyState hasFiles={hasFiles} />
+              </div>
+            )}
+
+            {status === 'error' && errorMessage && (
+              <div className="p-6 rounded-[2rem] bg-red-50/90 backdrop-blur-sm border border-red-200 text-red-700 animate-in shake duration-500 mt-4 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-red-100 p-2 rounded-xl text-red-600 shadow-sm">
+                    <AlertCircle size={20} />
+                  </div>
+                  <p className="font-black uppercase tracking-tight text-lg">Process Aborted</p>
+                </div>
+                <p className="font-bold opacity-80 leading-relaxed text-sm bg-white/70 p-4 rounded-2xl border border-red-100 shadow-inner">
+                  {errorMessage}
+                </p>
+              </div>
             )}
           </div>
-        )}
 
-        {status === 'error' && errorMessage && (
-          <div className="p-6 rounded-[2rem] bg-red-50 border border-red-100 text-red-700 animate-in shake duration-500">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="bg-red-100 p-2 rounded-xl text-red-600">
-                <AlertCircle size={20} />
-              </div>
-              <p className="font-black uppercase tracking-tight text-lg">Process Aborted</p>
+          {/* Global Run Button Area */}
+          {hasSteps && (
+            <div className="p-6 bg-white/60 border-t border-white/80 backdrop-blur-xl relative z-10">
+              <button
+                onClick={handleRun}
+                disabled={!hasFiles || isRunning}
+                className={`w-full py-5 rounded-3xl flex items-center justify-center font-black text-xl transition-all duration-500 group relative overflow-hidden
+                  ${(!hasFiles || isRunning)
+                    ? 'bg-gray-100/80 text-gray-400 cursor-not-allowed shadow-none border border-gray-200/50'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_10px_40px_-10px_rgba(37,99,235,0.6)] hover:shadow-[0_15px_50px_-10px_rgba(79,70,229,0.7)] hover:-translate-y-0.5 active:translate-y-0'}`}
+              >
+                {/* Button background glow animation */}
+                {hasFiles && !isRunning && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                )}
+                
+                {isRunning ? (
+                  <>
+                    <Loader2 className="animate-spin mr-3 relative z-10" size={24} strokeWidth={3} />
+                    <span className="relative z-10">Executing Chain...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className={`mr-3 relative z-10 transition-transform duration-500 ${hasFiles ? 'group-hover:translate-x-1 group-hover:scale-110' : ''}`} size={24} fill="currentColor" strokeWidth={3} />
+                    <span className="relative z-10">Run Recipe Workflow</span>
+                  </>
+                )}
+              </button>
+              {!hasFiles && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-amber-200 shadow-sm whitespace-nowrap animate-pulse">
+                  Drop files to run
+                </div>
+              )}
             </div>
-            <p className="font-bold opacity-80 leading-relaxed text-sm bg-white/50 p-4 rounded-2xl border border-red-100/50">
-              {errorMessage}
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

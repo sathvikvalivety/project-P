@@ -38,7 +38,7 @@ export function StepOptionsPanel({ step }: { step: RecipeStep }) {
   };
 
   return (
-    <div className="mt-2 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+    <div className="mt-2 p-5 bg-white/60 backdrop-blur-lg rounded-2xl border border-white/80 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
         <div className="max-w-md">
           <div className="flex items-center gap-2 mb-1">

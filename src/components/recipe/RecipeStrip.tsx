@@ -57,7 +57,7 @@ export function RecipeStrip({
   };
 
   return (
-    <div className="w-full bg-white border-y border-gray-100 py-3">
+    <div className="w-full bg-transparent py-3">
       <div 
         ref={scrollContainerRef}
         className="flex items-start gap-0 overflow-x-auto no-scrollbar scroll-smooth px-4 pb-1"

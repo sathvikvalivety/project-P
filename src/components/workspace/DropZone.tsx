@@ -27,8 +27,8 @@ export function DropZone() {
   return (
     <div 
       {...getRootProps()} 
-      className={`border-2 border-dashed rounded-xl p-8 mb-6 text-center cursor-pointer transition-colors duration-200 ease-in-out
-        ${isDragActive ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400 text-gray-500 hover:bg-gray-50'}`}
+      className={`border-[3px] border-dashed rounded-[2rem] p-8 text-center cursor-pointer transition-all duration-300 ease-in-out backdrop-blur-md
+        ${isDragActive ? 'border-blue-400 bg-blue-50/80 text-blue-700 shadow-xl scale-[1.02]' : 'border-white/60 bg-white/40 hover:bg-white/60 hover:border-white/80 hover:shadow-lg hover:scale-[1.01] text-gray-500'}`}
     >
       <input {...getInputProps()} />
       <UploadCloud className="mx-auto h-12 w-12 mb-3 text-gray-400" />

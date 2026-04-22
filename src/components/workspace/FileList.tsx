@@ -219,8 +219,8 @@ export function FileList() {
   const showGrip = files.length > 1 && !isProcessing;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex-grow flex flex-col min-h-0">
-      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+    <div className="bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex-grow flex flex-col min-h-0">
+      <div className="px-5 py-4 border-b border-white/50 bg-white/30 flex justify-between items-center backdrop-blur-lg">
         <h3 className="font-semibold text-gray-700">Uploaded Files</h3>
         <div className="flex items-center space-x-3">
           <span className="text-xs font-medium bg-gray-200 text-gray-700 py-1 px-2 rounded-full">
@@ -246,7 +246,7 @@ export function FileList() {
             items={files.map(f => f.id)} 
             strategy={verticalListSortingStrategy}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-2">
+            <div className="flex flex-col gap-3 pb-2">
               {files.map((item, index) => (
                 <SortableFileItem 
                   key={item.id} 
@@ -263,7 +263,7 @@ export function FileList() {
         </DndContext>
       </div>
       
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+      <div className="px-5 py-4 bg-white/30 border-t border-white/50 flex justify-between items-center backdrop-blur-lg">
         <div className="text-xs font-medium text-gray-500">
           <span className="text-gray-700 font-bold">{files.length}</span> {files.length === 1 ? 'file' : 'files'}
           <span className="mx-2 text-gray-300">|</span>
