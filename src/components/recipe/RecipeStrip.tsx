@@ -57,10 +57,10 @@ export function RecipeStrip({
   };
 
   return (
-    <div className="w-full bg-white border-y border-gray-100 py-6">
+    <div className="w-full bg-white border-y border-gray-100 py-3">
       <div 
         ref={scrollContainerRef}
-        className="flex items-start gap-0 overflow-x-auto no-scrollbar scroll-smooth px-8 pb-1"
+        className="flex items-start gap-0 overflow-x-auto no-scrollbar scroll-smooth px-4 pb-1"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <DndContext 

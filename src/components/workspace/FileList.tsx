@@ -1,6 +1,8 @@
-import { X, FileText, Trash2, GripVertical } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, FileText, Trash2, Image as ImageIcon, Table, FileCode, File, Menu } from 'lucide-react';
 import { usePDFStore, type PDFFileItem } from '../../store/usePDFStore';
 import { formatBytes } from '../../utils/formatBytes';
+import * as pdfjsLib from 'pdfjs-dist';
 
 
 import {
@@ -31,63 +33,150 @@ interface SortableFileItemProps {
 
 function SortableFileItem({ id, fileItem, index, isAccepted, onRemove, showGrip }: SortableFileItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const [meta, setMeta] = useState<string>('');
+
+  useEffect(() => {
+    const file = fileItem.file;
+    const type = file.type;
+    const name = file.name.toLowerCase();
+
+    if (type === 'application/pdf' || name.endsWith('.pdf')) {
+      file.arrayBuffer().then(buffer => {
+        pdfjsLib.getDocument({ data: buffer }).promise
+          .then(pdf => setMeta(`${pdf.numPages} page${pdf.numPages !== 1 ? 's' : ''}`))
+          .catch(() => setMeta('Unknown pages'));
+      });
+    } else if (type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        setMeta(`${img.width}x${img.height} px`);
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    } else if (type === 'text/csv' || name.endsWith('.csv')) {
+      file.text().then(text => {
+        const rows = text.split('\n').filter(r => r.trim().length > 0).length;
+        setMeta(`${rows} row${rows !== 1 ? 's' : ''}`);
+      });
+    } else if (type === 'application/json' || name.endsWith('.json')) {
+      file.text().then(text => {
+        try {
+          const j = JSON.parse(text);
+          setMeta(Array.isArray(j) ? `${j.length} items` : '1 object');
+        } catch {
+          setMeta('Invalid JSON');
+        }
+      });
+    }
+  }, [fileItem.file]);
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
-    boxShadow: isDragging ? '0 5px 15px rgba(0,0,0,0.1)' : 'none',
+    opacity: isDragging ? 0.8 : 1,
     zIndex: isDragging ? 10 : 1,
     position: 'relative' as const,
   };
 
+  let typeColor = 'bg-gray-100 text-gray-500 border-gray-200';
+  let leftBorder = 'border-l-gray-300';
+  let TypeIcon = File;
+  let typeLabel = 'FILE';
+
+  const type = fileItem.file.type;
+  const name = fileItem.file.name.toLowerCase();
+
+  if (type === 'application/pdf' || name.endsWith('.pdf')) {
+    typeColor = 'bg-red-50 text-red-600 border-red-200';
+    leftBorder = 'border-l-red-500';
+    TypeIcon = FileText;
+    typeLabel = 'PDF';
+  } else if (type.startsWith('image/')) {
+    typeColor = 'bg-blue-50 text-blue-600 border-blue-200';
+    leftBorder = 'border-l-blue-500';
+    TypeIcon = ImageIcon;
+    typeLabel = 'IMG';
+  } else if (name.endsWith('.docx') || type.includes('wordprocessingml')) {
+    typeColor = 'bg-purple-50 text-purple-600 border-purple-200';
+    leftBorder = 'border-l-purple-500';
+    TypeIcon = FileText;
+    typeLabel = 'DOCX';
+  } else if (type === 'text/csv' || type.includes('spreadsheetml') || name.endsWith('.csv') || name.endsWith('.xlsx')) {
+    typeColor = 'bg-green-50 text-green-600 border-green-200';
+    leftBorder = 'border-l-green-500';
+    TypeIcon = Table;
+    typeLabel = name.endsWith('.csv') ? 'CSV' : 'XLSX';
+  } else if (name.endsWith('.md') || type === 'text/markdown') {
+    typeColor = 'bg-amber-50 text-amber-600 border-amber-200';
+    leftBorder = 'border-l-amber-500';
+    TypeIcon = FileCode;
+    typeLabel = 'MD';
+  }
+
   return (
-    <li
+    <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center justify-between p-4 transition-colors bg-white ${
-        !isAccepted ? 'opacity-60 grayscale' : 'hover:bg-blue-50'
-      } ${isDragging ? 'bg-blue-50' : ''}`}
+      className={`flex items-stretch bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all ${leftBorder} border-l-[4px] ${
+        !isAccepted ? 'opacity-50 grayscale' : ''
+      } ${isDragging ? 'ring-2 ring-blue-400 shadow-xl scale-[1.02]' : ''}`}
     >
-      <div className="flex items-center space-x-3 overflow-hidden flex-grow" title={!isAccepted ? 'Not supported by this tool' : ''}>
-        
-        {showGrip && (
-          <div 
-            {...listeners} 
-            {...attributes} 
-            style={{ cursor: isDragging ? 'grabbing' : 'grab' }} 
-            className="text-gray-400 hover:text-gray-600 outline-none p-1 -ml-1 flex-shrink-0"
-          >
-            <GripVertical size={20} />
+      <div className="flex items-center justify-between p-3 w-full">
+        <div className="flex items-center gap-3 overflow-hidden flex-grow">
+          
+          {showGrip && (
+            <div 
+              {...listeners} 
+              {...attributes} 
+              style={{ cursor: isDragging ? 'grabbing' : 'grab' }} 
+              className="text-gray-300 hover:text-gray-600 outline-none p-1 flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
+            >
+              <Menu size={18} />
+            </div>
+          )}
+
+          <div className="flex-shrink-0 relative">
+            <div className={`w-10 h-10 rounded-lg border flex flex-col items-center justify-center ${typeColor}`}>
+              <TypeIcon size={16} className="mb-0.5" />
+              <span className="text-[9px] font-black tracking-tighter uppercase leading-none">{typeLabel}</span>
+            </div>
+            <span className="absolute -bottom-2 -right-2 w-5 h-5 rounded-full bg-gray-800 text-white flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm">
+              {index + 1}
+            </span>
           </div>
-        )}
-
-        <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold text-gray-500">
-          {index + 1}
-        </span>
-
-        <div className={`p-2 rounded-lg flex-shrink-0 ${isAccepted ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-400'}`}>
-          <FileText size={20} />
+          
+          <div className="min-w-0 flex-grow pl-1 pr-2">
+            <p className="text-sm font-bold text-gray-800 truncate" title={fileItem.file.name}>
+              {fileItem.file.name}
+            </p>
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 truncate">
+              <span className="font-medium">{formatBytes(fileItem.file.size)}</span>
+              {meta && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-gray-500">{meta}</span>
+                </>
+              )}
+              {!isAccepted && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-red-500 font-medium">Unsupported</span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
         
-        <div className="truncate pr-2">
-          <p className={`text-sm font-medium truncate ${isAccepted ? 'text-gray-900' : 'text-gray-500'}`} title={fileItem.file.name}>
-            {fileItem.file.name}
-          </p>
-          <p className="text-xs text-gray-500">
-            {formatBytes(fileItem.file.size)} {!isAccepted && <span className="text-red-400 font-medium ml-2">Unsupported type</span>}
-          </p>
-        </div>
+        <button
+          onClick={() => onRemove(id)}
+          className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors flex-shrink-0"
+          title="Remove file"
+        >
+          <X size={16} strokeWidth={2.5} />
+        </button>
       </div>
-      
-      <button
-        onClick={() => onRemove(id)}
-        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-md transition-colors flex-shrink-0 relative z-10"
-        title="Remove file"
-      >
-        <X size={18} />
-      </button>
-    </li>
+    </div>
   );
 }
 
@@ -96,6 +185,7 @@ export function FileList() {
   const removeFile = usePDFStore(state => state.removeFile);
   const reorderFiles = usePDFStore(state => state.reorderFiles);
   const clearFiles = usePDFStore(state => state.clearFiles);
+  const [showHint, setShowHint] = useState(() => !localStorage.getItem('hideReorderHint'));
   const isAccepted = (_type?: string) => true;
 
   const sensors = useSensors(
@@ -108,6 +198,10 @@ export function FileList() {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (showHint) {
+      setShowHint(false);
+      localStorage.setItem('hideReorderHint', 'true');
+    }
     const { active, over } = event;
     
     if (over && active.id !== over.id) {
@@ -125,7 +219,7 @@ export function FileList() {
   const showGrip = files.length > 1 && !isProcessing;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-6 flex-grow flex flex-col">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex-grow flex flex-col min-h-0">
       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
         <h3 className="font-semibold text-gray-700">Uploaded Files</h3>
         <div className="flex items-center space-x-3">
@@ -142,7 +236,7 @@ export function FileList() {
         </div>
       </div>
       
-      <div className="max-h-56 overflow-y-auto w-full custom-scrollbar">
+      <div className="flex-grow min-h-0 overflow-y-auto w-full custom-scrollbar p-3">
         <DndContext 
           sensors={sensors} 
           collisionDetection={closestCenter} 
@@ -152,7 +246,7 @@ export function FileList() {
             items={files.map(f => f.id)} 
             strategy={verticalListSortingStrategy}
           >
-            <ul className="divide-y divide-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-2">
               {files.map((item, index) => (
                 <SortableFileItem 
                   key={item.id} 
@@ -164,9 +258,22 @@ export function FileList() {
                   showGrip={showGrip}
                 />
               ))}
-            </ul>
+            </div>
           </SortableContext>
         </DndContext>
+      </div>
+      
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+        <div className="text-xs font-medium text-gray-500">
+          <span className="text-gray-700 font-bold">{files.length}</span> {files.length === 1 ? 'file' : 'files'}
+          <span className="mx-2 text-gray-300">|</span>
+          <span className="text-gray-700 font-bold">{formatBytes(files.reduce((acc, f) => acc + f.file.size, 0))}</span> total
+        </div>
+        {showGrip && showHint && (
+          <div className="text-[11px] font-bold text-blue-500 uppercase tracking-wide bg-blue-50 px-3 py-1 rounded-full animate-pulse">
+            Drag to reorder
+          </div>
+        )}
       </div>
     </div>
   );

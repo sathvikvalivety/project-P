@@ -38,8 +38,8 @@ export function StepOptionsPanel({ step }: { step: RecipeStep }) {
   };
 
   return (
-    <div className="mt-4 p-8 bg-white rounded-3xl border border-gray-100 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] animate-in fade-in slide-in-from-top-4 duration-300">
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+    <div className="mt-2 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
         <div className="max-w-md">
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded uppercase tracking-wider">
@@ -82,7 +82,7 @@ export function StepOptionsPanel({ step }: { step: RecipeStep }) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-8 pt-6 border-t border-gray-50">
+      <div className="grid grid-cols-1 gap-6 pt-4 border-t border-gray-50">
         {/* Tool-specific Options Rendering */}
         {step.toolId === 'pdf-split' && (
           <div className="space-y-3">

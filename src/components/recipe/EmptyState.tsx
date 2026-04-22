@@ -1,6 +1,17 @@
 import { Plus } from 'lucide-react';
 
-export function EmptyState() {
+export function EmptyState({ hasFiles }: { hasFiles?: boolean }) {
+  if (hasFiles) {
+    return (
+      <div className="flex items-center justify-center p-4 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+        <p className="text-sm font-medium text-gray-500 flex items-center gap-2">
+          <Plus size={16} className="text-blue-500" /> 
+          Click tools in the sidebar to build your recipe
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-grow flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
       <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 text-blue-500">

@@ -34,7 +34,7 @@ export function ToolWorkspace() {
         loadRecipe(decoded, TOOL_REGISTRY);
         setShowShareBanner(true);
         sessionStorage.setItem('sharedRecipeLoaded', 'true');
-        
+
         // Clean URL without reloading page
         const newUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
@@ -68,7 +68,7 @@ export function ToolWorkspace() {
               <p className="text-xs text-blue-100 mt-1 font-medium opacity-80">"{recipe.name}" is ready for your files.</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => setShowShareBanner(false)}
             className="p-2 hover:bg-white/10 rounded-xl transition-all"
             title="Dismiss"
@@ -80,11 +80,13 @@ export function ToolWorkspace() {
 
       <RecipeToolbar />
 
-      <div className="flex-grow flex flex-col min-h-0 space-y-8 overflow-y-auto no-scrollbar pb-12 pr-1">
-        <DropZone />
+      <div className="flex-grow flex flex-col min-h-0 space-y-4 overflow-hidden pb-4 pr-1">
+        <div className="flex-shrink-0">
+          <DropZone />
+        </div>
         {hasFiles && <FileList />}
 
-        <div className="space-y-4">
+        <div className="space-y-2 flex-shrink-0">
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2">
               <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Workflow Pipeline</h3>
@@ -94,17 +96,17 @@ export function ToolWorkspace() {
               {recipe.steps.length} {recipe.steps.length === 1 ? 'Step' : 'Steps'}
             </span>
           </div>
-          
+
           {hasSteps ? (
             <div className="space-y-2">
-              <RecipeStrip 
-                activeStepId={activeStepId} 
-                onSetActiveStep={setActiveStepId} 
+              <RecipeStrip
+                activeStepId={activeStepId}
+                onSetActiveStep={setActiveStepId}
               />
               {activeStep && <StepOptionsPanel step={activeStep} />}
             </div>
           ) : (
-            <EmptyState />
+            <EmptyState hasFiles={hasFiles} />
           )}
         </div>
 
@@ -115,8 +117,8 @@ export function ToolWorkspace() {
               onClick={handleRun}
               disabled={!hasFiles || isRunning}
               className={`w-full py-5 rounded-3xl flex items-center justify-center font-black text-xl transition-all duration-300 group
-                ${(!hasFiles || isRunning) 
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' 
+                ${(!hasFiles || isRunning)
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                   : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xl shadow-blue-200/50 hover:shadow-blue-300/60 active:scale-[0.98]'}`}
             >
               {isRunning ? (
@@ -141,15 +143,15 @@ export function ToolWorkspace() {
 
         {status === 'error' && errorMessage && (
           <div className="p-6 rounded-[2rem] bg-red-50 border border-red-100 text-red-700 animate-in shake duration-500">
-             <div className="flex items-center gap-3 mb-3">
-               <div className="bg-red-100 p-2 rounded-xl text-red-600">
-                 <AlertCircle size={20} />
-               </div>
-               <p className="font-black uppercase tracking-tight text-lg">Process Aborted</p>
-             </div>
-             <p className="font-bold opacity-80 leading-relaxed text-sm bg-white/50 p-4 rounded-2xl border border-red-100/50">
-               {errorMessage}
-             </p>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="bg-red-100 p-2 rounded-xl text-red-600">
+                <AlertCircle size={20} />
+              </div>
+              <p className="font-black uppercase tracking-tight text-lg">Process Aborted</p>
+            </div>
+            <p className="font-bold opacity-80 leading-relaxed text-sm bg-white/50 p-4 rounded-2xl border border-red-100/50">
+              {errorMessage}
+            </p>
           </div>
         )}
       </div>

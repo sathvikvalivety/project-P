@@ -6,8 +6,14 @@ export function Sidebar() {
   const files = usePDFStore(state => state.files);
   const addStep = usePDFStore(state => state.addStep);
   
-  const categories: ToolCategory[] = ['PDF Tools', 'Image Tools'];
-
+  const CATEGORIES: { id: ToolCategory; label: string }[] = [
+    { id: 'pdf', label: 'PDF Tools' },
+    { id: 'image', label: 'Image Tools' },
+    { id: 'word', label: 'Word Tools' },
+    { id: 'markdown', label: 'Markdown Tools' },
+    { id: 'spreadsheet', label: 'Spreadsheet Tools' },
+    { id: 'text', label: 'Text & Data Tools' }
+  ];
   // Determine the current output type to check compatibility
   const lastStep = activeRecipe.steps.length > 0 ? activeRecipe.steps[activeRecipe.steps.length - 1] : null;
   const lastToolDef = lastStep ? TOOL_REGISTRY.find(t => t.id === lastStep.toolId) : null;
@@ -29,13 +35,21 @@ export function Sidebar() {
       </div>
       
       <div className="flex-grow overflow-y-auto p-4 space-y-8 no-scrollbar">
-        {categories.map(category => (
-          <div key={category} className="space-y-3">
-            <h3 className="px-3 text-[11px] font-black text-gray-400 uppercase tracking-widest leading-none">
-              {category}
-            </h3>
+        {CATEGORIES.map(category => {
+          const toolsInCategory = TOOL_REGISTRY.filter(t => t.category === category.id);
+          if (toolsInCategory.length === 0) return null;
+          return (
+          <div key={category.id} className="space-y-3">
+            <div className="flex items-center justify-between px-3">
+              <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                {category.label}
+              </h3>
+              <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                {toolsInCategory.length}
+              </span>
+            </div>
             <div className="space-y-1">
-              {TOOL_REGISTRY.filter(t => t.category === category).map(tool => {
+              {toolsInCategory.map(tool => {
                 const isCompatible = tool.acceptsInput.includes(currentOutputType);
                 
                 return (
@@ -72,7 +86,7 @@ export function Sidebar() {
               })}
             </div>
           </div>
-        ))}
+        )})}
       </div>
 
       <div className="p-4 border-t border-gray-100">

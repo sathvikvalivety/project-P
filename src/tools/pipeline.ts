@@ -42,7 +42,7 @@ export async function runPipeline(files: File[], recipe: Recipe) {
         const output = await tool.execute(currentInput, step.options);
         
         // Normalize output (Uint8Array | Uint8Array[]) -> File[]
-        const outputFiles = normalizeOutput(output, i);
+        const outputFiles = normalizeOutput(output, i, tool.outputType);
         
         // Update store with intermediate results
         store.setIntermediateOutput(step.id, outputFiles);
