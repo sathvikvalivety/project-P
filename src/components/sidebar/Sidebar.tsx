@@ -1,7 +1,8 @@
 import { TOOL_REGISTRY, type ToolCategory } from '../../tools/registry';
 import { usePDFStore } from '../../store/usePDFStore';
+import { X } from 'lucide-react';
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   const activeRecipe = usePDFStore(state => state.activeRecipe);
   const files = usePDFStore(state => state.files);
   const addStep = usePDFStore(state => state.addStep);
@@ -23,15 +24,25 @@ export function Sidebar() {
     : (files.length > 0 && files[0].file.type.startsWith('image/') ? 'image' : 'single-pdf');
 
   return (
-    <aside className="w-72 bg-white border-r border-gray-200 flex flex-col h-full shadow-[4px_0_15px_-3px_rgba(0,0,0,0.02)]">
-      <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-          <span className="text-xl font-black">P</span>
+    <aside className="w-[85vw] max-w-sm sm:w-80 lg:w-72 bg-white border-r border-gray-200 flex flex-col h-full shadow-[4px_0_15px_-3px_rgba(0,0,0,0.02)]">
+      <div className="p-6 border-b border-gray-100 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+            <span className="text-xl font-black">P</span>
+          </div>
+          <div>
+            <h1 className="text-lg font-black tracking-tighter text-gray-800">PDF TOOLKIT</h1>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recipe Builder</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg font-black tracking-tighter text-gray-800">PDF TOOLKIT</h1>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recipe Builder</p>
-        </div>
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="lg:hidden p-2 -mr-2 bg-gray-50 rounded-full hover:bg-gray-100 text-gray-500"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
       
       <div className="flex-grow overflow-y-auto p-4 space-y-8 no-scrollbar">
