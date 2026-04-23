@@ -1,6 +1,7 @@
 import { usePDFStore, type Recipe } from '../store/usePDFStore';
 import { TOOL_REGISTRY } from './registry';
 import { normalizeOutput } from '../utils/normalizeOutput';
+import { workerPool } from '../utils/workerPool';
 
 /**
  * Pipeline Execution Engine
@@ -38,8 +39,18 @@ export async function runPipeline(files: File[], recipe: Recipe) {
       store.setStepError(step.id, null);
 
       try {
-        // Execute tool with current input and step-specific options
-        const output = await tool.execute(currentInput, step.options);
+        // Prepare input buffers for Transferable Objects
+        const inputBuffers = await Promise.all(
+          currentInput.map(f => f.arrayBuffer())
+        );
+
+        // Execute tool in worker pool
+        const result = await workerPool.run(tool.id, inputBuffers, step.options);
+        
+        // Construct Uint8Array(s) from returned buffers
+        const output = Array.isArray(result) 
+          ? result.map(b => new Uint8Array(b))
+          : new Uint8Array(result as ArrayBuffer);
         
         // Normalize output (Uint8Array | Uint8Array[]) -> File[]
         const outputFiles = normalizeOutput(output, i, tool.outputType);

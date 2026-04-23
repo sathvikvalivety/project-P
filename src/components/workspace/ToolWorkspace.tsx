@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePDFStore } from '../../store/usePDFStore';
+import { getFile } from '../../store/fileStore';
 import { DropZone } from './DropZone';
 import { FileList } from './FileList';
 import { RecipeStrip } from '../recipe/RecipeStrip';
@@ -44,7 +45,7 @@ export function ToolWorkspace() {
 
   const handleRun = () => {
     if (files.length === 0 || recipe.steps.length === 0) return;
-    const fileObjects = files.map(f => f.file);
+    const fileObjects = files.map(f => getFile(f.id)).filter((f): f is File => f !== undefined);
     runPipeline(fileObjects, recipe);
   };
 

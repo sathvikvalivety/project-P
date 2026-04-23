@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, FileText, Trash2, Image as ImageIcon, Table, FileCode, File, Menu } from 'lucide-react';
-import { usePDFStore, type PDFFileItem } from '../../store/usePDFStore';
+import { usePDFStore, type FileMetadata } from '../../store/usePDFStore';
+import { getFile } from '../../store/fileStore';
 import { formatBytes } from '../../utils/formatBytes';
 import * as pdfjsLib from 'pdfjs-dist';
-
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 import {
   DndContext,
@@ -24,21 +25,23 @@ import { CSS } from '@dnd-kit/utilities';
 
 interface SortableFileItemProps {
   id: string; 
-  fileItem: PDFFileItem; 
+  fileItem: FileMetadata; 
   index: number;
   isAccepted: boolean;
   onRemove: (id: string) => void;
   showGrip: boolean;
+  style?: React.CSSProperties;
 }
 
-function SortableFileItem({ id, fileItem, index, isAccepted, onRemove, showGrip }: SortableFileItemProps) {
+function SortableFileItem({ id, fileItem, index, isAccepted, onRemove, showGrip, style: virtualStyle }: SortableFileItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const [meta, setMeta] = useState<string>('');
 
   useEffect(() => {
-    const file = fileItem.file;
-    const type = file.type;
-    const name = file.name.toLowerCase();
+    const file = getFile(fileItem.id);
+    if (!file) return;
+    const type = fileItem.type;
+    const name = fileItem.name.toLowerCase();
 
     if (type === 'application/pdf' || name.endsWith('.pdf')) {
       file.arrayBuffer().then(buffer => {
@@ -69,14 +72,14 @@ function SortableFileItem({ id, fileItem, index, isAccepted, onRemove, showGrip 
         }
       });
     }
-  }, [fileItem.file]);
+  }, [fileItem.id]);
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    ...virtualStyle,
+    transform: transform ? CSS.Transform.toString(transform) : virtualStyle?.transform,
     transition,
     opacity: isDragging ? 0.8 : 1,
     zIndex: isDragging ? 10 : 1,
-    position: 'relative' as const,
   };
 
   let typeColor = 'bg-gray-100 text-gray-500 border-gray-200';
@@ -84,8 +87,8 @@ function SortableFileItem({ id, fileItem, index, isAccepted, onRemove, showGrip 
   let TypeIcon = File;
   let typeLabel = 'FILE';
 
-  const type = fileItem.file.type;
-  const name = fileItem.file.name.toLowerCase();
+  const type = fileItem.type;
+  const name = fileItem.name.toLowerCase();
 
   if (type === 'application/pdf' || name.endsWith('.pdf')) {
     typeColor = 'bg-red-50 text-red-600 border-red-200';
@@ -147,11 +150,11 @@ function SortableFileItem({ id, fileItem, index, isAccepted, onRemove, showGrip 
           </div>
           
           <div className="min-w-0 flex-grow pl-1 pr-2">
-            <p className="text-sm font-bold text-gray-800 truncate" title={fileItem.file.name}>
-              {fileItem.file.name}
+            <p className="text-sm font-bold text-gray-800 truncate" title={fileItem.name}>
+              {fileItem.name}
             </p>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 truncate">
-              <span className="font-medium">{formatBytes(fileItem.file.size)}</span>
+              <span className="font-medium">{formatBytes(fileItem.size)}</span>
               {meta && (
                 <>
                   <span className="text-gray-300">•</span>
@@ -185,8 +188,18 @@ export function FileList() {
   const removeFile = usePDFStore(state => state.removeFile);
   const reorderFiles = usePDFStore(state => state.reorderFiles);
   const clearFiles = usePDFStore(state => state.clearFiles);
+  const status = usePDFStore(state => state.status);
   const [showHint, setShowHint] = useState(() => !localStorage.getItem('hideReorderHint'));
   const isAccepted = (_type?: string) => true;
+
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: files.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 76, // 64px height + 12px gap
+    overscan: 5,
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -220,7 +233,7 @@ export function FileList() {
 
   return (
     <div className="bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex-grow flex flex-col min-h-0">
-      <div className="px-5 py-4 border-b border-white/50 bg-white/30 flex justify-between items-center backdrop-blur-lg">
+      <div className="px-5 py-4 border-b border-white/50 bg-white/30 flex justify-between items-center backdrop-blur-lg flex-shrink-0">
         <h3 className="font-semibold text-gray-700">Uploaded Files</h3>
         <div className="flex items-center space-x-3">
           <span className="text-xs font-medium bg-gray-200 text-gray-700 py-1 px-2 rounded-full">
@@ -236,7 +249,7 @@ export function FileList() {
         </div>
       </div>
       
-      <div className="flex-grow min-h-0 overflow-y-auto w-full custom-scrollbar p-3">
+      <div ref={parentRef} className="flex-grow min-h-0 overflow-y-auto w-full custom-scrollbar">
         <DndContext 
           sensors={sensors} 
           collisionDetection={closestCenter} 
@@ -246,28 +259,42 @@ export function FileList() {
             items={files.map(f => f.id)} 
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex flex-col gap-3 pb-2">
-              {files.map((item, index) => (
-                <SortableFileItem 
-                  key={item.id} 
-                  id={item.id} 
-                  fileItem={item} 
-                  index={index}
-                  isAccepted={isAccepted(item.file.type)} 
-                  onRemove={removeFile}
-                  showGrip={showGrip}
-                />
-              ))}
+            <div 
+              className="relative w-full" 
+              style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const item = files[virtualRow.index];
+                return (
+                  <SortableFileItem 
+                    key={item.id} 
+                    id={item.id} 
+                    fileItem={item} 
+                    index={virtualRow.index}
+                    isAccepted={isAccepted(item.type)} 
+                    onRemove={removeFile}
+                    showGrip={showGrip}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 12,
+                      width: 'calc(100% - 24px)',
+                      height: `${virtualRow.size - 12}px`,
+                      transform: `translateY(${virtualRow.start + 12}px)`,
+                    }}
+                  />
+                );
+              })}
             </div>
           </SortableContext>
         </DndContext>
       </div>
       
-      <div className="px-5 py-4 bg-white/30 border-t border-white/50 flex justify-between items-center backdrop-blur-lg">
+      <div className="px-5 py-4 bg-white/30 border-t border-white/50 flex justify-between items-center backdrop-blur-lg flex-shrink-0">
         <div className="text-xs font-medium text-gray-500">
           <span className="text-gray-700 font-bold">{files.length}</span> {files.length === 1 ? 'file' : 'files'}
           <span className="mx-2 text-gray-300">|</span>
-          <span className="text-gray-700 font-bold">{formatBytes(files.reduce((acc, f) => acc + f.file.size, 0))}</span> total
+          <span className="text-gray-700 font-bold">{formatBytes(files.reduce((acc, f) => acc + f.size, 0))}</span> total
         </div>
         {showGrip && showHint && (
           <div className="text-[11px] font-bold text-blue-500 uppercase tracking-wide bg-blue-50 px-3 py-1 rounded-full animate-pulse">

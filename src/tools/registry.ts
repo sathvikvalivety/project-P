@@ -1,23 +1,3 @@
-import { mergePDFs } from './pdfMerge';
-import { splitPDF } from './pdfSplit';
-import { compressPDF } from './pdfCompress';
-import { imagesToPDF } from './imagesToPDF';
-import { docxToHtml } from './docxToHtml';
-import { docxToText } from './docxToText';
-import { markdownToHtml } from './markdownToHtml';
-import { markdownToPdf } from './markdownToPdf';
-import { csvToExcel } from './csvToExcel';
-import { excelToCsv } from './excelToCsv';
-import { jsonToExcel } from './jsonToExcel';
-import { extractTextFromPdf } from './extractTextFromPdf';
-import { base64Encode } from './base64Encode';
-import { base64Decode } from './base64Decode';
-import { jsonFormat } from './jsonFormat';
-import { hashFile } from './hashFile';
-import { imageResize } from './imageResize';
-import { imageCrop } from './imageCrop';
-import { imageToGrayscale } from './imageToGrayscale';
-
 export type ToolCategory = 'pdf' | 'image' | 'word' | 'markdown' | 'spreadsheet' | 'text';
 export type ToolOutputType = 'single-pdf' | 'multi-pdf' | 'image' | 'text' | 'html' | 'csv' | 'json' | 'excel' | 'base64';
 
@@ -30,7 +10,11 @@ export interface ToolDefinition {
   outputType: ToolOutputType;
   acceptsInput: ToolOutputType[];
   defaultOptions: Record<string, unknown>;
-  execute: (input: File[], options: Record<string, unknown>) => Promise<Uint8Array | Uint8Array[]>;
+  load: () => Promise<(
+    input: File[], 
+    options: Record<string, unknown>,
+    onProgress?: (p: number) => void
+  ) => Promise<Uint8Array | Uint8Array[]>>;
 }
 
 export const TOOL_REGISTRY: ToolDefinition[] = [
@@ -43,8 +27,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     outputType: 'single-pdf',
     acceptsInput: ['single-pdf', 'multi-pdf'],
     defaultOptions: {},
-    execute: async (files, _options) => {
-      return await mergePDFs(files);
+    load: async () => {
+      const { mergePDFs } = await import('./pdfMerge');
+      return (files) => mergePDFs(files);
     }
   },
   {
@@ -56,9 +41,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     outputType: 'multi-pdf',
     acceptsInput: ['single-pdf'],
     defaultOptions: { ranges: "1" },
-    execute: async (files, options) => {
-      const ranges = options.ranges as string;
-      return await splitPDF(files[0], ranges);
+    load: async () => {
+      const { splitPDF } = await import('./pdfSplit');
+      return (files, options) => splitPDF(files[0], options.ranges as string);
     }
   },
   {
@@ -70,9 +55,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     outputType: 'single-pdf',
     acceptsInput: ['single-pdf'],
     defaultOptions: { deepMode: false, quality: 60 },
-    execute: async (files, options) => {
-      const deepMode = options.deepMode as boolean;
-      return await compressPDF(files[0], deepMode);
+    load: async () => {
+      const { compressPDF } = await import('./pdfCompress');
+      return (files, options) => compressPDF(files[0], options.deepMode as boolean);
     }
   },
   {
@@ -88,8 +73,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     outputType: 'single-pdf',
     acceptsInput: ['image'],
     defaultOptions: {},
-    execute: async (files, _options) => {
-      return await imagesToPDF(files);
+    load: async () => {
+      const { imagesToPDF } = await import('./imagesToPDF');
+      return (files) => imagesToPDF(files);
     }
   },
   {
@@ -98,10 +84,13 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     description: 'Convert Word documents to clean HTML',
     category: 'word',
     outputType: 'html',
-    acceptsInput: ['text', 'base64'], // technically accepts any, but let's restrict to word if we had it, wait, we don't have docx as an output type currently. So no chaining inputs usually. Actually empty array for acceptsInput since it's just a starting tool mostly. Let's use the provided acceptsInput: [] or ['base64']
+    acceptsInput: [],
     defaultOptions: {},
     accept: { 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] },
-    execute: async (files, _options) => await docxToHtml(files[0])
+    load: async () => {
+      const { docxToHtml } = await import('./docxToHtml');
+      return (files) => docxToHtml(files[0]);
+    }
   },
   {
     id: 'docx-to-text',
@@ -112,7 +101,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: [],
     defaultOptions: {},
     accept: { 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] },
-    execute: async (files, _options) => await docxToText(files[0])
+    load: async () => {
+      const { docxToText } = await import('./docxToText');
+      return (files) => docxToText(files[0]);
+    }
   },
   {
     id: 'markdown-to-html',
@@ -123,7 +115,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['text'],
     defaultOptions: {},
     accept: { 'text/markdown': ['.md'] },
-    execute: async (files, _options) => await markdownToHtml(files[0])
+    load: async () => {
+      const { markdownToHtml } = await import('./markdownToHtml');
+      return (files) => markdownToHtml(files[0]);
+    }
   },
   {
     id: 'markdown-to-pdf',
@@ -134,7 +129,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['text'],
     defaultOptions: {},
     accept: { 'text/markdown': ['.md'] },
-    execute: async (files, _options) => await markdownToPdf(files[0])
+    load: async () => {
+      const { markdownToPdf } = await import('./markdownToPdf');
+      return (files) => markdownToPdf(files[0]);
+    }
   },
   {
     id: 'csv-to-excel',
@@ -145,7 +143,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['csv'],
     defaultOptions: {},
     accept: { 'text/csv': ['.csv'] },
-    execute: async (files, _options) => await csvToExcel(files)
+    load: async () => {
+      const { csvToExcel } = await import('./csvToExcel');
+      return (files) => csvToExcel(files);
+    }
   },
   {
     id: 'excel-to-csv',
@@ -156,7 +157,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['excel'],
     defaultOptions: {},
     accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] },
-    execute: async (files, _options) => await excelToCsv(files[0])
+    load: async () => {
+      const { excelToCsv } = await import('./excelToCsv');
+      return (files) => excelToCsv(files[0]);
+    }
   },
   {
     id: 'json-to-excel',
@@ -167,7 +171,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['json'],
     defaultOptions: {},
     accept: { 'application/json': ['.json'] },
-    execute: async (files, _options) => await jsonToExcel(files[0])
+    load: async () => {
+      const { jsonToExcel } = await import('./jsonToExcel');
+      return (files) => jsonToExcel(files[0]);
+    }
   },
   {
     id: 'extract-text-from-pdf',
@@ -178,7 +185,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['single-pdf'],
     defaultOptions: {},
     accept: { 'application/pdf': ['.pdf'] },
-    execute: async (files, _options) => await extractTextFromPdf(files[0])
+    load: async () => {
+      const { extractTextFromPdf } = await import('./extractTextFromPdf');
+      return (files) => extractTextFromPdf(files[0]);
+    }
   },
   {
     id: 'base64-encode',
@@ -189,18 +199,24 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['single-pdf', 'multi-pdf', 'image', 'text', 'html', 'csv', 'json', 'excel'],
     defaultOptions: {},
     accept: { '*/*': ['.*'] },
-    execute: async (files, _options) => await base64Encode(files[0])
+    load: async () => {
+      const { base64Encode } = await import('./base64Encode');
+      return (files) => base64Encode(files[0]);
+    }
   },
   {
     id: 'base64-decode',
     name: 'Base64 Decode',
     description: 'Decode a Base64 text file back to binary',
     category: 'text',
-    outputType: 'single-pdf', // default output, or could be anything. In this architecture, we might just assume pdf or let the pipeline handle it. The user will just download it.
+    outputType: 'single-pdf',
     acceptsInput: ['base64', 'text'],
     defaultOptions: {},
     accept: { 'text/plain': ['.txt'] },
-    execute: async (files, _options) => await base64Decode(files[0])
+    load: async () => {
+      const { base64Decode } = await import('./base64Decode');
+      return (files) => base64Decode(files[0]);
+    }
   },
   {
     id: 'json-format',
@@ -211,7 +227,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['json', 'text'],
     defaultOptions: {},
     accept: { 'application/json': ['.json'] },
-    execute: async (files, _options) => await jsonFormat(files[0])
+    load: async () => {
+      const { jsonFormat } = await import('./jsonFormat');
+      return (files) => jsonFormat(files[0]);
+    }
   },
   {
     id: 'hash-file',
@@ -222,7 +241,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     acceptsInput: ['single-pdf', 'multi-pdf', 'image', 'text', 'html', 'csv', 'json', 'excel', 'base64'],
     defaultOptions: {},
     accept: { '*/*': ['.*'] },
-    execute: async (files, _options) => await hashFile(files[0])
+    load: async () => {
+      const { hashFile } = await import('./hashFile');
+      return (files) => hashFile(files[0]);
+    }
   },
   {
     id: 'image-resize',
@@ -237,7 +259,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
       'image/jpeg': ['.jpeg', '.jpg'],
       'image/webp': ['.webp']
     },
-    execute: async (files, options) => await imageResize(files[0], options)
+    load: async () => {
+      const { imageResize } = await import('./imageResize');
+      return (files, options) => imageResize(files[0], options);
+    }
   },
   {
     id: 'image-crop',
@@ -252,7 +277,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
       'image/jpeg': ['.jpeg', '.jpg'],
       'image/webp': ['.webp']
     },
-    execute: async (files, options) => await imageCrop(files[0], options)
+    load: async () => {
+      const { imageCrop } = await import('./imageCrop');
+      return (files, options) => imageCrop(files[0], options);
+    }
   },
   {
     id: 'image-grayscale',
@@ -267,6 +295,9 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
       'image/jpeg': ['.jpeg', '.jpg'],
       'image/webp': ['.webp']
     },
-    execute: async (files, options) => await imageToGrayscale(files[0], options)
+    load: async () => {
+      const { imageToGrayscale } = await import('./imageToGrayscale');
+      return (files, options) => imageToGrayscale(files[0], options);
+    }
   }
 ];

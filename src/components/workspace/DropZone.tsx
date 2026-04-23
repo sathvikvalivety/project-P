@@ -1,21 +1,50 @@
 import { useCallback } from 'react';
 import { useDropzone, type FileRejection } from 'react-dropzone';
 import { UploadCloud } from 'lucide-react';
-import { usePDFStore } from '../../store/usePDFStore';
-
+import { usePDFStore, type FileMetadata } from '../../store/usePDFStore';
+import { validateFile, getFileHash } from '../../utils/validateFile';
+import { setFile } from '../../store/fileStore';
 
 export function DropZone() {
   const addFiles = usePDFStore(state => state.addFiles);
   const setErrorMessage = usePDFStore(state => state.setErrorMessage);
   const acceptedTypes = undefined;
 
-  const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
     if (fileRejections.length > 0) {
-      setErrorMessage("Some files were rejected. Ensure they match the accepted formats for this tool.");
+      setErrorMessage("Some files were rejected. Ensure they match the accepted formats.");
     }
     
     if (acceptedFiles.length > 0) {
-      addFiles(acceptedFiles);
+      const validMetadata: FileMetadata[] = [];
+      const errors: string[] = [];
+
+      for (const file of acceptedFiles) {
+        const result = await validateFile(file);
+        if (result.valid) {
+          const id = crypto.randomUUID();
+          const hash = await getFileHash(file);
+          setFile(id, file);
+          validMetadata.push({
+            id,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified,
+            hash
+          });
+        } else {
+          errors.push(`${file.name}: ${result.error}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        setErrorMessage(errors.join(' | '));
+      }
+
+      if (validMetadata.length > 0) {
+        addFiles(validMetadata);
+      }
     }
   }, [addFiles, setErrorMessage]);
 
