@@ -91,7 +91,7 @@ export function StepOptionsPanel({ step }: { step: RecipeStep }) {
               <input 
                 type="text"
                 value={(step.options.ranges as string) || ''}
-                onChange={(e) => updateStepOptions(step.id, { ranges: e.target.value })}
+                onChange={(e) => updateStepOptions(step.id, tool.name, { ranges: e.target.value })}
                 placeholder="e.g. 1-3, 5, 8-10"
                 className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300 font-medium"
               />
@@ -107,7 +107,7 @@ export function StepOptionsPanel({ step }: { step: RecipeStep }) {
             <div 
               className={`p-5 rounded-2xl border transition-all cursor-pointer select-none
                 ${step.options.deepMode ? 'bg-blue-50/30 border-blue-100' : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'}`}
-              onClick={() => updateStepOptions(step.id, { deepMode: !step.options.deepMode })}
+              onClick={() => updateStepOptions(step.id, tool.name, { deepMode: !step.options.deepMode })}
             >
               <div className="flex items-center gap-4">
                 <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all 
@@ -137,7 +137,7 @@ export function StepOptionsPanel({ step }: { step: RecipeStep }) {
                   max="100"
                   step="5"
                   value={(step.options.quality as number) || 60}
-                  onChange={(e) => updateStepOptions(step.id, { quality: parseInt(e.target.value) })}
+                  onChange={(e) => updateStepOptions(step.id, tool.name, { quality: parseInt(e.target.value) })}
                   className="w-full h-2.5 bg-gray-100 rounded-full appearance-none cursor-pointer accent-blue-600"
                 />
                 <div className="flex justify-between text-[10px] font-bold text-gray-400 px-0.5">

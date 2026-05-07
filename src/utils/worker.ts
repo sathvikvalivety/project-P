@@ -21,9 +21,9 @@ self.onmessage = async (e: MessageEvent) => {
 
     if (Array.isArray(result)) {
       const buffers = result.map(r => r.buffer);
-      self.postMessage({ taskId, type: 'result', result: buffers, success: true }, buffers as unknown as Transferable[]);
+      (self as any).postMessage({ taskId, type: 'result', result: buffers, success: true }, buffers);
     } else {
-      self.postMessage({ taskId, type: 'result', result: result.buffer, success: true }, [result.buffer] as unknown as Transferable[]);
+      (self as any).postMessage({ taskId, type: 'result', result: result.buffer, success: true }, [result.buffer]);
     }
   } catch (error: any) {
     self.postMessage({ taskId, error: error.message, success: false });
