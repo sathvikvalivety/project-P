@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
-import { setFile, removeFileFromMap, clearFilesFromMap } from './fileStore';
+import { removeFileFromMap, clearFilesFromMap } from './fileStore';
 
 export type FileMetadata = {
   id: string;

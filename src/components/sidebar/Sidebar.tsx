@@ -21,7 +21,7 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   
   const currentOutputType = lastToolDef 
     ? lastToolDef.outputType 
-    : (files.length > 0 && files[0].file.type.startsWith('image/') ? 'image' : 'single-pdf');
+    : (files.length > 0 && files[0].type.startsWith('image/') ? 'image' : 'single-pdf');
 
   return (
     <aside className="w-[85vw] max-w-sm sm:w-80 lg:w-72 bg-white border-r border-gray-200 flex flex-col h-full shadow-[4px_0_15px_-3px_rgba(0,0,0,0.02)]">
@@ -66,7 +66,7 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
                 return (
                   <button
                     key={tool.id}
-                    onClick={() => isCompatible && addStep(tool.id, tool.defaultOptions)}
+                    onClick={() => isCompatible && addStep(tool.id, tool.name, tool.defaultOptions)}
                     disabled={!isCompatible}
                     className={`w-full flex flex-col items-start px-3 py-3 rounded-xl transition-all duration-200 group relative
                       ${isCompatible 

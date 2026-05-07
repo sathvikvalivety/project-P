@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles, MoveRight } from 'lucide-react';
+import { Sparkles, MoveRight } from 'lucide-react';
 
 export function OnboardingTour() {
   const [step, setStep] = useState(0);

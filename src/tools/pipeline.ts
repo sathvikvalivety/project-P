@@ -49,8 +49,8 @@ export async function runPipeline(files: File[], recipe: Recipe) {
         
         // Construct Uint8Array(s) from returned buffers
         const output = Array.isArray(result) 
-          ? result.map(b => new Uint8Array(b))
-          : new Uint8Array(result as ArrayBuffer);
+          ? result.map(b => new Uint8Array(b as unknown as ArrayBuffer))
+          : new Uint8Array(result as unknown as ArrayBuffer);
         
         // Normalize output (Uint8Array | Uint8Array[]) -> File[]
         const outputFiles = normalizeOutput(output, i, tool.outputType);

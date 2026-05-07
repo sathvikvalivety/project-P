@@ -1,4 +1,4 @@
-import { Recipe } from '../store/usePDFStore';
+import type { Recipe } from '../store/usePDFStore';
 
 export const RECIPE_TEMPLATES: Partial<Recipe>[] = [
   {
